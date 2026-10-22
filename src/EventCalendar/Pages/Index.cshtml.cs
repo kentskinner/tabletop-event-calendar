@@ -9,5 +9,6 @@ public sealed class IndexModel(EventRepository repository) : PageModel
     public IReadOnlyList<IGrouping<DateOnly, GameEvent>> Days { get; private set; } = [];
 
     public async Task OnGetAsync() => Days = (await repository.ListEventsAsync())
+        .Where(x => x.StartLocal.Date >= DateTime.Today)
         .GroupBy(x => DateOnly.FromDateTime(x.StartLocal)).ToList();
 }

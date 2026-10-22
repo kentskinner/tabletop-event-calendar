@@ -5,8 +5,8 @@
 }
 <section class="page-heading"><p class="eyebrow">Player registration</p><h1>@Model.Event.Name</h1><p>@Model.Event.StartLocal.ToString("dddd, MMMM d · h:mm tt") · @Model.Event.Location</p></section>
 <section class="panel registration">
-@if (Model.Result?.Status == RegistrationStatus.Confirmed)
-{<div class="success"><h2>You're in!</h2><p>Seat @Model.Result.SeatNumber is yours. See you at the table.</p></div>}
+@if (Model.ConfirmedSeatNumber is int confirmedSeat)
+{<div class="success"><h2>You're in!</h2><p>Seat @confirmedSeat is yours. See you at the table.</p></div>}
 else
 {
     @if (Model.Result?.Status == RegistrationStatus.Full || Model.Event.IsFull){<div class="validation"><h2>This event is full</h2><p>All @Model.Event.Capacity seats have been claimed.</p></div>}

@@ -39,10 +39,11 @@ public sealed class RegistrationHttpTests : IAsyncLifetime
         var token = await GetAntiforgeryTokenAsync(client, eventId);
 
         var firstResponse = await PostRegistrationAsync(client, eventId, "Ava", token);
-        var secondResponse = await PostRegistrationAsync(client, eventId, "Ben", token);
+        Assert.Equal(HttpStatusCode.Redirect, firstResponse.StatusCode);
+        var confirmationResponse = await client.GetAsync(firstResponse.Headers.Location);
+        Assert.Contains("You're in!", await confirmationResponse.Content.ReadAsStringAsync());
 
-        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
-        Assert.Contains("You're in!", await firstResponse.Content.ReadAsStringAsync());
+        var secondResponse = await PostRegistrationAsync(client, eventId, "Ben", token);
         Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
         Assert.Contains("This event is full", await secondResponse.Content.ReadAsStringAsync());
         Assert.Equal(1, (await repository.GetEventAsync(eventId))!.RegistrationCount);

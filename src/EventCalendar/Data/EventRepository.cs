@@ -1,3 +1,4 @@
+using System.Globalization;
 using EventCalendar.Models;
 using Microsoft.Data.Sqlite;
 
@@ -197,7 +198,8 @@ public sealed class EventRepository(IConfiguration configuration)
         {
             events.Add(new(
                 reader.GetInt64(0), reader.GetString(1), reader.GetString(2), reader.GetString(3),
-                DateTime.Parse(reader.GetString(4)), reader.GetInt32(5), reader.GetInt32(6),
+                DateTime.Parse(reader.GetString(4), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind),
+                reader.GetInt32(5), reader.GetInt32(6),
                 reader.GetInt32(7), reader.GetString(8), reader.GetInt32(9)));
         }
         return events;

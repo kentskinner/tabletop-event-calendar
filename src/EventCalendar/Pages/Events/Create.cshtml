@@ -1,9 +1,7 @@
 @page
 @model EventCalendar.Pages.Events.CreateModel
-@using System.Text.Json
 @{
     ViewData["Title"] = "Create event";
-    var templateData = JsonSerializer.Serialize(Model.Templates.ToDictionary(x => x.Id, x => new { formats = x.Formats, capacity = x.DefaultCapacity, maxCapacity = x.MaxCapacity, duration = x.DefaultDurationMinutes }));
 }
 <section class="page-heading"><p class="eyebrow">Organizer</p><h1>Create an event</h1><p>Game defaults come from its template. You can tune the player count before publishing.</p></section>
 <form method="post" class="panel form-grid">
@@ -17,7 +15,7 @@
     <div class="wide actions"><a asp-page="/Index">Cancel</a><button type="submit">Create event</button></div>
 </form>
 <script>
-const templates = @Html.Raw(templateData);
+const templates = @Json.Serialize(Model.Templates.ToDictionary(x => x.Id, x => new { formats = x.Formats, capacity = x.DefaultCapacity, maxCapacity = x.MaxCapacity, duration = x.DefaultDurationMinutes }));
 const game = document.querySelector('#game'), format = document.querySelector('#format'), capacity = document.querySelector('#capacity');
 function applyTemplate(reset = true) {
   const t = templates[game.value], selected = format.value;
