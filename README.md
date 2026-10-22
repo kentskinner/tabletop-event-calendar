@@ -50,4 +50,4 @@ I left out authentication, editing and cancellation, recurring events, payments,
 
 ## AI usage
 
-I used OpenAI Codex for the initial scaffolding, CSS, tests, and code review. The first version called a SQLite transaction API that does not exist. The compiler caught it, and I changed the code to `BeginTransaction(deferred: false)` so last-seat registrations are serialized. During browser testing I also fixed incorrect Razor routes and a form bug that reset the selected format after validation.
+I used OpenAI Codex for the initial scaffolding, CSS, tests, and code review. The first version tried `BeginTransactionAsync(deferred: false)`, but Microsoft.Data.Sqlite does not provide an asynchronous overload that accepts `deferred`. The compiler caught it, and I changed the code to `BeginTransaction(deferred: false)` so last-seat registrations are serialized. During browser testing I also fixed incorrect Razor routes and a form bug that reset the selected format after validation.
