@@ -18,7 +18,7 @@ Open the URL printed in the terminal. The SQLite database is created automatical
 dotnet run --project src/EventCalendar -- --seed
 ```
 
-Seeding is idempotent: it only adds demo data when the event database is empty. Run the tests with `dotnet test`.
+`DemoDataSeeder` checks the event list before writing and adds its three sample events only when that list is empty. Run the tests with `dotnet test`.
 
 Set `EventCalendar:PublicBaseUrl` in configuration, or `EventCalendar__PublicBaseUrl` as an environment variable, when the site has a public or LAN address. QR codes and calendar invites use this value so registration links resolve from another device.
 
@@ -36,7 +36,7 @@ Player names are unique per event using a case-insensitive database constraint. 
 
 ### Game templates
 
-`GameTemplateCatalog` contains templates keyed by stable IDs. Each template provides a display name, formats, default duration, default capacity, maximum capacity, and minimum player count. The creation page uses these values for its options and defaults. `GameTemplate.CreateEvent` validates the format and capacity and supplies the template-owned duration and minimum player count. The creation page and demo seeder both use this path. Events store a copy of the selected values so that changing a template does not alter existing events.
+`GameTemplateCatalog` contains templates keyed by stable IDs. Each template provides a display name, formats, default duration, default capacity, maximum capacity, and minimum player count. The creation page uses these values for its options and defaults. `GameTemplate.CreateEvent` validates the format and capacity and supplies the template-owned duration and minimum player count. The creation page and demo seeder both use this path. Events store the chosen format, duration, capacity, and minimum player count, so later changes to those template fields do not alter scheduled values.
 
 Adding a fourth game requires one new `GameTemplate` entry. The event creation and display code does not branch on game names. A non-card game could use the same structure if formats, duration, and player limits are enough to describe it. If a game needed teams or table assignments, I would add those as template capabilities instead of checking for a specific game name.
 
@@ -46,7 +46,7 @@ I spent the timebox on the main workflow: create an event, find it on the calend
 
 I chose Razor Pages so the three-hour exercise could stay focused on the server behavior and end-to-end flow. A separate React application and API would add another toolchain and client-state layer without helping the core requirements. I would consider that split if the UI became more interactive or needed to be deployed independently.
 
-I left out authentication, editing and cancellation, recurring events, payments, email, waitlists, and a month-grid calendar. Entered times use the configured store time zone; per-event time zones are not supported. Next I would add database migrations and structured logging, protect organizer actions, and add browser tests for the full workflow. I would also split the read and write services once the application grew beyond this small feature set.
+I left out authentication, editing and cancellation, recurring events, payments, email, waitlists, and a month-grid calendar. Calendar invites interpret entered times in the configured store time zone; per-event time zones are not supported. Next I would add database migrations and structured logging, protect organizer actions, and add browser tests for the full workflow. I would also split the read and write services once the application grew beyond this small feature set.
 
 ## AI usage
 
