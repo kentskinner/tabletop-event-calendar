@@ -28,6 +28,8 @@ Capacity is stored on the event. It is checked against the selected game templat
 
 Registration starts a SQLite `IMMEDIATE` transaction, taking the write reservation before it reads the current registrations. Within that transaction, the server compares the registration count with capacity. If space remains, it assigns the first open seat number and inserts the registration. Concurrent requests for the last seat are serialized. The first request commits the seat, and the second sees that the event is full. A unique constraint on `(event_id, seat_number)` is a backstop against duplicate seat assignments. Tests cover both concurrent registration and reuse of a seat after a registration is removed.
 
+If SQLite is locked long enough to exceed the configured timeout, the registration page asks the player to try again instead of returning a server error. The same retry response is used if the seat-number constraint detects a collision.
+
 Player names are unique per event using a case-insensitive database constraint. Duplicate names are rejected within an event. Supporting different players with the same name would require real player identities.
 
 ### Game templates

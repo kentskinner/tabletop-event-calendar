@@ -14,6 +14,7 @@ else
     {
         @if (Model.Result?.Status == RegistrationStatus.Duplicate){<div class="validation">That name is already registered for this event.</div>}
         @if (Model.Result?.Status == RegistrationStatus.InvalidName){<div class="validation">Enter your name to claim a seat.</div>}
+        @if (Model.Result?.Status == RegistrationStatus.Busy){<div class="validation">Registration is busy. Please try again.</div>}
         <p><strong>@Model.Event.SeatsRemaining</strong> of @Model.Event.Capacity seats remaining</p>
         <form method="post"><label>Your name<input asp-for="PlayerName" autofocus autocomplete="name" /><span asp-validation-for="PlayerName"></span></label><button type="submit">Claim my seat</button></form>
     }

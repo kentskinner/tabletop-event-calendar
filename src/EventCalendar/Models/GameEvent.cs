@@ -34,6 +34,6 @@ public sealed record GameEvent
 
 public sealed record Registration(long Id, long EventId, string PlayerName, int SeatNumber);
 
-public enum RegistrationStatus { Confirmed, Full, Duplicate, InvalidName, EventNotFound }
+public enum RegistrationStatus { Confirmed, Full, Duplicate, InvalidName, Busy, EventNotFound }
 
 public sealed record RegistrationResult(RegistrationStatus Status, int? SeatNumber = null);

@@ -95,6 +95,18 @@ public sealed class EventRepository(IConfiguration configuration)
         if (string.IsNullOrWhiteSpace(playerName))
             return new(RegistrationStatus.InvalidName);
 
+        try
+        {
+            return await RegisterCoreAsync(eventId, playerName.Trim());
+        }
+        catch (SqliteException ex) when (ex.SqliteErrorCode is 5 or 6)
+        {
+            return new(RegistrationStatus.Busy);
+        }
+    }
+
+    private async Task<RegistrationResult> RegisterCoreAsync(long eventId, string playerName)
+    {
         await using var connection = new SqliteConnection(_connectionString);
         await connection.OpenAsync();
         // deferred: false maps to BEGIN IMMEDIATE, reserving the writer before we count seats.
@@ -153,19 +165,29 @@ public sealed class EventRepository(IConfiguration configuration)
                 VALUES ($event, $name, $seat, $created);
                 """;
             insert.Parameters.AddWithValue("$event", eventId);
-            insert.Parameters.AddWithValue("$name", playerName.Trim());
+            insert.Parameters.AddWithValue("$name", playerName);
             insert.Parameters.AddWithValue("$seat", seat);
             insert.Parameters.AddWithValue("$created", DateTime.UtcNow.ToString("O"));
             await insert.ExecuteNonQueryAsync();
             await transaction.CommitAsync();
             return new(RegistrationStatus.Confirmed, seat);
         }
-        catch (SqliteException ex) when (ex.SqliteErrorCode == 19)
+        catch (SqliteException ex) when (IsUniqueViolation(ex, "registrations.player_name"))
         {
             await transaction.RollbackAsync();
             return new(RegistrationStatus.Duplicate);
         }
+        catch (SqliteException ex) when (IsUniqueViolation(ex, "registrations.seat_number"))
+        {
+            await transaction.RollbackAsync();
+            return new(RegistrationStatus.Busy);
+        }
     }
+
+    private static bool IsUniqueViolation(SqliteException exception, string column) =>
+        exception.SqliteErrorCode == 19
+        && exception.SqliteExtendedErrorCode == 2067
+        && exception.Message.Contains(column, StringComparison.Ordinal);
 
     private static async Task<IReadOnlyList<GameEvent>> ReadEventsAsync(SqliteCommand command)
     {

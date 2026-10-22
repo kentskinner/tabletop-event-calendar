@@ -83,6 +83,45 @@ public sealed class RegistrationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task LockedDatabase_ReturnsBusy()
+    {
+        var eventId = await _repository.CreateEventAsync(CreateEvent("League", 4));
+        await using var lockConnection = new SqliteConnection($"Data Source={_path}");
+        await lockConnection.OpenAsync();
+        await using var writeLock = lockConnection.BeginTransaction(deferred: false);
+        var fastRepository = CreateRepository(defaultTimeout: 1);
+
+        var result = await fastRepository.RegisterAsync(eventId, "Ava");
+
+        Assert.Equal(RegistrationStatus.Busy, result.Status);
+    }
+
+    [Fact]
+    public async Task SeatCollision_ReturnsBusyInsteadOfDuplicate()
+    {
+        var eventId = await _repository.CreateEventAsync(CreateEvent("League", 4));
+        await using (var connection = new SqliteConnection($"Data Source={_path}"))
+        {
+            await connection.OpenAsync();
+            var trigger = connection.CreateCommand();
+            trigger.CommandText = """
+                CREATE TRIGGER force_seat_collision BEFORE INSERT ON registrations
+                WHEN NEW.player_name = 'Collide'
+                BEGIN
+                    INSERT INTO registrations (event_id, player_name, seat_number, created_utc)
+                    VALUES (NEW.event_id, 'Injected', NEW.seat_number, NEW.created_utc);
+                END;
+                """;
+            await trigger.ExecuteNonQueryAsync();
+        }
+
+        var result = await _repository.RegisterAsync(eventId, "Collide");
+
+        Assert.Equal(RegistrationStatus.Busy, result.Status);
+        Assert.Equal(0, (await _repository.GetEventAsync(eventId))!.RegistrationCount);
+    }
+
+    [Fact]
     public async Task DemoSeed_IsRepresentativeAndIdempotent()
     {
         var seeder = new DemoDataSeeder(_repository, new GameTemplateCatalog());
@@ -100,4 +139,13 @@ public sealed class RegistrationTests : IAsyncLifetime
 
     private static GameEvent CreateEvent(string name, int capacity) =>
         TestTemplate.CreateEvent(name, "Standard", DateTime.Now, capacity, "Store").Event!;
+
+    private EventRepository CreateRepository(int defaultTimeout)
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["ConnectionStrings:Events"] = $"Data Source={_path};Default Timeout={defaultTimeout}"
+        }).Build();
+        return new EventRepository(configuration);
+    }
 }
