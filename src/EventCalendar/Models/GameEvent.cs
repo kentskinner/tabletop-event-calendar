@@ -32,8 +32,6 @@ public sealed record GameEvent
     public bool IsFull => RegistrationCount >= Capacity;
 }
 
-public sealed record Registration(long Id, long EventId, string PlayerName, int SeatNumber);
-
 public enum RegistrationStatus { Confirmed, Full, Duplicate, InvalidName, Busy, EventNotFound }
 
 public sealed record RegistrationResult(RegistrationStatus Status, int? SeatNumber = null);
