@@ -10,7 +10,10 @@ using QRCoder;
 
 namespace EventCalendar.Pages.Events;
 
-public sealed class DetailsModel(EventRepository repository, GameTemplateCatalog catalog) : PageModel
+public sealed class DetailsModel(
+    EventRepository repository,
+    GameTemplateCatalog catalog,
+    IConfiguration configuration) : PageModel
 {
     public GameEvent Event { get; private set; } = null!;
     public GameTemplate Template { get; private set; } = null!;
@@ -33,14 +36,15 @@ public sealed class DetailsModel(EventRepository repository, GameTemplateCatalog
     {
         var gameEvent = await repository.GetEventAsync(id);
         if (gameEvent is null) return NotFound();
+        var timeZone = configuration["EventCalendar:TimeZone"] ?? "America/Los_Angeles";
         var calendar = new Ical.Net.Calendar();
         calendar.Events.Add(new CalendarEvent
         {
             Summary = gameEvent.Name,
             Location = gameEvent.Location,
             Description = $"{gameEvent.Format} event. Registration: {Url.PageLink("/Events/Register", values: new { id })}",
-            DtStart = new CalDateTime(gameEvent.StartLocal),
-            DtEnd = new CalDateTime(gameEvent.EndLocal),
+            DtStart = new CalDateTime(gameEvent.StartLocal, timeZone),
+            DtEnd = new CalDateTime(gameEvent.EndLocal, timeZone),
             Uid = $"event-{id}@tabletop-calendar.local"
         });
         var bytes = System.Text.Encoding.UTF8.GetBytes(new CalendarSerializer().SerializeToString(calendar));

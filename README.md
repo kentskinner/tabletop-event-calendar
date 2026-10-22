@@ -44,7 +44,7 @@ I spent the timebox on the main workflow: create an event, find it on the calend
 
 I chose Razor Pages so the three-hour exercise could stay focused on the server behavior and end-to-end flow. A separate React application and API would add another toolchain and client-state layer without helping the core requirements. I would consider that split if the UI became more interactive or needed to be deployed independently.
 
-I left out authentication, editing and cancellation, recurring events, payments, email, waitlists, and a month-grid calendar. The UI treats entered times as the store's local time. Next I would store an explicit IANA time zone and UTC instant, add database migrations and structured logging, protect organizer actions, and add browser tests for the full workflow. I would also split the read and write services once the application grew beyond this small feature set.
+I left out authentication, editing and cancellation, recurring events, payments, email, waitlists, and a month-grid calendar. Entered times use the configured store time zone; per-event time zones are not supported. Next I would add database migrations and structured logging, protect organizer actions, and add browser tests for the full workflow. I would also split the read and write services once the application grew beyond this small feature set.
 
 ## AI usage
 
