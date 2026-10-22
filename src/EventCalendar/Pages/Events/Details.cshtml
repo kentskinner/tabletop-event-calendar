@@ -12,8 +12,10 @@
         <a asp-page-handler="Calendar" asp-route-id="@Model.Event.Id" class="button secondary">Download calendar invite</a>
     </section>
     <section class="panel qr-panel">
-        <h2>@(Model.Event.IsFull ? "Event full" : "Register to play")</h2>
-        @if (Model.Event.IsFull){<p>All @Model.Event.Capacity seats are taken.</p>}
-        else {<div class="qr">@Html.Raw(Model.QrSvg)</div><p>Scan the code or share this registration link.</p><a href="@Model.RegistrationUrl">@Model.RegistrationUrl</a>}
+        <h2>@(Model.Event.IsFull ? "Registration full" : "Register to play")</h2>
+        @if (Model.Event.IsFull){<p>All @Model.Event.Capacity seats are taken. The registration page will show the current full status.</p>}
+        <div class="qr">@Html.Raw(Model.QrSvg)</div>
+        <p>Scan the code or share this registration link.</p>
+        <a href="@Model.RegistrationUrl">@Model.RegistrationUrl</a>
     </section>
 </div>

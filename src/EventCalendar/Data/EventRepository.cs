@@ -92,6 +92,9 @@ public sealed class EventRepository(IConfiguration configuration)
 
     public async Task<RegistrationResult> RegisterAsync(long eventId, string playerName)
     {
+        if (string.IsNullOrWhiteSpace(playerName))
+            return new(RegistrationStatus.InvalidName);
+
         await using var connection = new SqliteConnection(_connectionString);
         await connection.OpenAsync();
         // deferred: false maps to BEGIN IMMEDIATE, reserving the writer before we count seats.

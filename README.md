@@ -44,4 +44,4 @@ I deliberately cut authentication, editing/cancellation, recurring events, payme
 
 ## AI usage
 
-I used OpenAI Codex to accelerate scaffolding, CSS, test cases, and a first-pass review of the capacity transaction. I did not accept the tempting “count registrations, then insert” approach: those are two independent operations and can oversubscribe the last seat. I replaced it with an immediate database transaction plus unique seat constraints, and kept the database-backed concurrency test that proves the behavior.
+I used OpenAI Codex to accelerate scaffolding, CSS, test cases, and review. Its initial implementation called a nonexistent SQLite transaction API; compilation caught the mistake, and I replaced it with `BeginTransaction(deferred: false)`, which creates the immediate transaction needed to serialize last-seat claims. Browser testing also caught malformed Razor routes and a selected format that was lost after validation, so I corrected both rather than treating generated output as finished code.

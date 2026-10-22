@@ -47,6 +47,15 @@ public sealed class RegistrationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task BlankName_IsRejectedWithoutTakingASeat()
+    {
+        var eventId = await _repository.CreateEventAsync(new(0, "League", "pokemon", "Standard", DateTime.Now, 120, 4, 2, "Store"));
+
+        Assert.Equal(RegistrationStatus.InvalidName, (await _repository.RegisterAsync(eventId, "   ")).Status);
+        Assert.Equal(0, (await _repository.GetEventAsync(eventId))!.RegistrationCount);
+    }
+
+    [Fact]
     public async Task DemoSeed_IsRepresentativeAndIdempotent()
     {
         var seeder = new DemoDataSeeder(_repository, new GameTemplateCatalog());
