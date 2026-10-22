@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] · Tabletop Calendar</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+<header><a asp-page="/Index" class="brand">Tabletop Calendar</a><a asp-page="/Events/Create" class="button">Create event</a></header>
+<main>@RenderBody()</main>
+</body>
+</html>

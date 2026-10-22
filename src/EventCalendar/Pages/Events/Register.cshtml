@@ -1,0 +1,20 @@
+@page "/events/{id:long}/register"
+@model EventCalendar.Pages.Events.RegisterModel
+@{
+    ViewData["Title"] = $"Register · {Model.Event.Name}";
+}
+<section class="page-heading"><p class="eyebrow">Player registration</p><h1>@Model.Event.Name</h1><p>@Model.Event.StartLocal.ToString("dddd, MMMM d · h:mm tt") · @Model.Event.Location</p></section>
+<section class="panel registration">
+@if (Model.Result?.Status == RegistrationStatus.Confirmed)
+{<div class="success"><h2>You're in!</h2><p>Seat @Model.Result.SeatNumber is yours. See you at the table.</p></div>}
+else
+{
+    @if (Model.Result?.Status == RegistrationStatus.Full || Model.Event.IsFull){<div class="validation"><h2>This event is full</h2><p>All @Model.Event.Capacity seats have been claimed.</p></div>}
+    else
+    {
+        @if (Model.Result?.Status == RegistrationStatus.Duplicate){<div class="validation">That name is already registered for this event.</div>}
+        <p><strong>@Model.Event.SeatsRemaining</strong> of @Model.Event.Capacity seats remaining</p>
+        <form method="post"><label>Your name<input asp-for="PlayerName" autofocus autocomplete="name" /><span asp-validation-for="PlayerName"></span></label><button type="submit">Claim my seat</button></form>
+    }
+}
+</section>

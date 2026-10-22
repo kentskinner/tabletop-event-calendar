@@ -1,0 +1,24 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Events";
+}
+<section class="hero"><p class="eyebrow">Organized play</p><h1>Upcoming events</h1><p>Plan a tournament, share the registration link, and keep every seat accounted for.</p></section>
+@if (Model.Days.Count == 0)
+{
+    <section class="empty"><h2>No events scheduled</h2><p>Create the first event to see it here.</p><a asp-page="/Events/Create" class="button">Create event</a></section>
+}
+@foreach (var day in Model.Days)
+{
+    <section class="day">
+        <h2><span>@day.Key.ToString("ddd")</span> @day.Key.ToString("MMMM d, yyyy")</h2>
+        @foreach (var item in day)
+        {
+            <a class="event-card" asp-page="/Events/Details" asp-route-id="@item.Id">
+                <time>@item.StartLocal.ToString("h:mm tt")</time>
+                <span><strong>@item.Name</strong><small>@item.Format · @item.Location</small></span>
+                <span class="seats @(item.IsFull ? "full" : "")">@(item.IsFull ? "Full" : $"{item.SeatsRemaining} seats")</span>
+            </a>
+        }
+    </section>
+}

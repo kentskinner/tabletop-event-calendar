@@ -1,0 +1,30 @@
+@page
+@model EventCalendar.Pages.Events.CreateModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Create event";
+    var templateData = JsonSerializer.Serialize(Model.Templates.ToDictionary(x => x.Id, x => new { formats = x.Formats, capacity = x.DefaultCapacity, maxCapacity = x.MaxCapacity, duration = x.DefaultDurationMinutes }));
+}
+<section class="page-heading"><p class="eyebrow">Organizer</p><h1>Create an event</h1><p>Game defaults come from its template. You can tune the player count before publishing.</p></section>
+<form method="post" class="panel form-grid">
+    <div asp-validation-summary="ModelOnly" class="validation"></div>
+    <label class="wide">Event name<input asp-for="Input.Name" placeholder="Friday Night Showdown" autofocus /><span asp-validation-for="Input.Name"></span></label>
+    <label>Game<select asp-for="Input.GameTemplateId" id="game">@foreach (var game in Model.Templates){<option value="@game.Id">@game.Name</option>}</select><span asp-validation-for="Input.GameTemplateId"></span></label>
+    <label>Format<select asp-for="Input.Format" id="format">@foreach (var formatName in Model.Templates.First(x => x.Id == Model.Input.GameTemplateId).Formats){<option value="@formatName">@formatName</option>}</select><span asp-validation-for="Input.Format"></span></label>
+    <label>Starts<input asp-for="Input.StartLocal" type="datetime-local" /><span asp-validation-for="Input.StartLocal"></span></label>
+    <label>Capacity <small id="capacityHelp"></small><input asp-for="Input.Capacity" id="capacity" type="number" min="1" max="30" /><span asp-validation-for="Input.Capacity"></span></label>
+    <label class="wide">Location<input asp-for="Input.Location" /><span asp-validation-for="Input.Location"></span></label>
+    <div class="wide actions"><a asp-page="/Index">Cancel</a><button type="submit">Create event</button></div>
+</form>
+<script>
+const templates = @Html.Raw(templateData);
+const game = document.querySelector('#game'), format = document.querySelector('#format'), capacity = document.querySelector('#capacity');
+function applyTemplate(reset = true) {
+  const t = templates[game.value], selected = format.value;
+  format.replaceChildren(...t.formats.map(x => new Option(x, x, false, x === selected)));
+  capacity.max = t.maxCapacity;
+  document.querySelector('#capacityHelp').textContent = `(default ${t.capacity}, max ${t.maxCapacity}; ${t.duration / 60} hours)`;
+  if (reset) capacity.value = t.capacity;
+}
+game.addEventListener('change', () => applyTemplate(true)); applyTemplate(false);
+</script>
