@@ -32,6 +32,8 @@ Adding a fourth game means adding one `GameTemplate` entry; event creation and d
 
 I spent the timebox on the complete path: create an event, find it in a day-grouped calendar, download a standards-based ICS invite, scan or follow a generated QR link, and register until the server says the event is full. SQLite keeps setup to one command and is sufficient for a single organizer. I used Ical.Net and QRCoder rather than hand-writing either format.
 
+I chose server-rendered Razor Pages to keep the three-hour exercise focused on transactional correctness and the complete user flow. A separate React SPA and API would add another toolchain, deployment boundary, and client-state layer without improving the core requirements; I would introduce that split if richer client interactions or independent frontend deployment justified it.
+
 I deliberately cut authentication, editing/cancellation, recurring events, payments, email, waitlists, and a full month-grid library, as requested. The UI treats entered times as the store's local time; production would store an explicit IANA time zone and UTC instant, add migrations and structured logging, protect organizer actions, apply CSRF/rate-limit review, and run browser-level tests for QR/ICS and the whole flow. I would also separate read/write services once the product had more than this single vertical slice.
 
 ## AI usage
