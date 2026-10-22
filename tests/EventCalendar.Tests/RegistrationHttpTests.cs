@@ -49,6 +49,26 @@ public sealed class RegistrationHttpTests : IAsyncLifetime
         Assert.Equal(1, (await repository.GetEventAsync(eventId))!.RegistrationCount);
     }
 
+    [Fact]
+    public async Task RegistrationPost_RejectsDuplicateNameCaseInsensitively()
+    {
+        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var repository = _factory.Services.GetRequiredService<EventRepository>();
+        var template = new GameTemplate("test", "Test Game", ["Standard"], 120, 2, 30, 1);
+        var gameEvent = template.CreateEvent("Finals", "Standard", DateTime.Now.AddDays(1), 2, "Store").Event!;
+        var eventId = await repository.CreateEventAsync(gameEvent);
+        var token = await GetAntiforgeryTokenAsync(client, eventId);
+
+        var firstResponse = await PostRegistrationAsync(client, eventId, "Mina", token);
+        Assert.Equal(HttpStatusCode.Redirect, firstResponse.StatusCode);
+        await client.GetAsync(firstResponse.Headers.Location);
+
+        var duplicateResponse = await PostRegistrationAsync(client, eventId, "mina", token);
+        Assert.Equal(HttpStatusCode.OK, duplicateResponse.StatusCode);
+        Assert.Contains("That name is already registered for this event.", await duplicateResponse.Content.ReadAsStringAsync());
+        Assert.Equal(1, (await repository.GetEventAsync(eventId))!.RegistrationCount);
+    }
+
     private static async Task<string> GetAntiforgeryTokenAsync(HttpClient client, long eventId)
     {
         var getResponse = await client.GetAsync($"/events/{eventId}/register");
