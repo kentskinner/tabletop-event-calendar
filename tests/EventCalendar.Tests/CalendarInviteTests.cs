@@ -1,5 +1,5 @@
 using EventCalendar.Data;
-using EventCalendar.Models;
+using EventCalendar.Services;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +14,10 @@ public sealed class CalendarInviteTests : IAsyncLifetime
 
     public Task InitializeAsync()
     {
-        _factory = new TestApplicationFactory(_path);
+        _factory = new TestApplicationFactory(_path, new Dictionary<string, string?>
+        {
+            ["EventCalendar:PublicBaseUrl"] = "https://calendar.example"
+        });
         return Task.CompletedTask;
     }
 
@@ -31,14 +34,31 @@ public sealed class CalendarInviteTests : IAsyncLifetime
     {
         using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
         var repository = _factory.Services.GetRequiredService<EventRepository>();
-        var template = new GameTemplate("test", "Test Game", ["Standard"], 120, 8, 30, 1);
+        var template = _factory.Services.GetRequiredService<GameTemplateCatalog>().Find("magic")!;
         var gameEvent = template.CreateEvent("Finals", "Standard", new DateTime(2026, 10, 23, 18, 0, 0), 8, "Store").Event!;
         var eventId = await repository.CreateEventAsync(gameEvent);
 
         var response = await client.GetAsync($"/events/{eventId}?handler=Calendar");
         var calendar = await response.Content.ReadAsStringAsync();
+        var unfoldedCalendar = calendar.Replace("\r\n ", "");
 
         Assert.Contains("DTSTART;TZID=America/Los_Angeles:20261023T180000", calendar);
-        Assert.Contains("DTEND;TZID=America/Los_Angeles:20261023T200000", calendar);
+        Assert.Contains("DTEND;TZID=America/Los_Angeles:20261023T210000", calendar);
+        Assert.Contains($"https://calendar.example/events/{eventId}/register", unfoldedCalendar);
+    }
+
+    [Fact]
+    public async Task EventPage_UsesPublicBaseUrlForRegistrationLink()
+    {
+        using var client = _factory.CreateClient();
+        var repository = _factory.Services.GetRequiredService<EventRepository>();
+        var template = _factory.Services.GetRequiredService<GameTemplateCatalog>().Find("magic")!;
+        var gameEvent = template.CreateEvent("Finals", "Standard", DateTime.Now.AddDays(1), 8, "Store").Event!;
+        var eventId = await repository.CreateEventAsync(gameEvent);
+
+        var html = await client.GetStringAsync($"/events/{eventId}");
+
+        Assert.Contains($"https://calendar.example/events/{eventId}/register", html);
+        Assert.Contains("<svg", html);
     }
 }

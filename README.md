@@ -20,6 +20,8 @@ dotnet run --project src/EventCalendar -- --seed
 
 Seeding is idempotent: it only adds demo data when the event database is empty. Run the tests with `dotnet test`.
 
+Set `EventCalendar:PublicBaseUrl` in configuration, or `EventCalendar__PublicBaseUrl` as an environment variable, when the site has a public or LAN address. QR codes and calendar invites use this value so registration links resolve from another device.
+
 ## Design
 
 ### Capacity and concurrent registrations

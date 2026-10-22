@@ -26,7 +26,7 @@ public sealed class DetailsModel(
         if (gameEvent is null) return NotFound();
         Event = gameEvent;
         Template = catalog.Find(gameEvent.GameTemplateId)!;
-        RegistrationUrl = Url.PageLink("/Events/Register", values: new { id })!;
+        RegistrationUrl = GetRegistrationUrl(id);
         using var qrData = QRCodeGenerator.GenerateQrCode(RegistrationUrl, QRCodeGenerator.ECCLevel.Q);
         QrSvg = new SvgQRCode(qrData).GetGraphic(5);
         return Page();
@@ -42,12 +42,22 @@ public sealed class DetailsModel(
         {
             Summary = gameEvent.Name,
             Location = gameEvent.Location,
-            Description = $"{gameEvent.Format} event. Registration: {Url.PageLink("/Events/Register", values: new { id })}",
+            Description = $"{gameEvent.Format} event. Registration: {GetRegistrationUrl(id)}",
             DtStart = new CalDateTime(gameEvent.StartLocal, timeZone),
             DtEnd = new CalDateTime(gameEvent.EndLocal, timeZone),
             Uid = $"event-{id}@tabletop-calendar.local"
         });
         var bytes = System.Text.Encoding.UTF8.GetBytes(new CalendarSerializer().SerializeToString(calendar));
         return File(bytes, "text/calendar; charset=utf-8", $"event-{id}.ics");
+    }
+
+    private string GetRegistrationUrl(long id)
+    {
+        var publicBaseUrl = configuration["EventCalendar:PublicBaseUrl"];
+        if (string.IsNullOrWhiteSpace(publicBaseUrl))
+            return Url.PageLink("/Events/Register", values: new { id })!;
+
+        var path = Url.Page("/Events/Register", values: new { id })!;
+        return $"{publicBaseUrl.TrimEnd('/')}/{path.TrimStart('/')}";
     }
 }
