@@ -50,4 +50,4 @@ I left out authentication, editing and cancellation, recurring events, payments,
 
 ## AI usage
 
-I used OpenAI Codex for the initial scaffolding, CSS, tests, and code review. The first version tried `BeginTransactionAsync(deferred: false)`, but Microsoft.Data.Sqlite does not provide an asynchronous overload that accepts `deferred`. The compiler caught it, and I changed the code to `BeginTransaction(deferred: false)` so last-seat registrations are serialized. During browser testing I also fixed incorrect Razor routes and a form bug that reset the selected format after validation.
+I used OpenAI Codex for the initial scaffolding, CSS, tests, and code review. The generated code called `connection.BeginTransaction(SqliteTransactionMode.Immediate)`, using an enum from a different SQLite library. The compiler rejected it, and I changed the call to `BeginTransaction(deferred: false)`, which makes last-seat registrations serialize. During browser testing I also fixed incorrect Razor routes and a form bug that reset the selected format after validation.
