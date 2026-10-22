@@ -30,14 +30,15 @@ public sealed class RegistrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task LastSeat_IsAwardedOnlyOnceUnderConcurrency()
+    public async Task Capacity_IsNotExceededUnderConcurrentRegistrations()
     {
-        var eventId = await _repository.CreateEventAsync(CreateEvent("Finals", 1));
-        var attempts = await Task.WhenAll(_repository.RegisterAsync(eventId, "Ava"), _repository.RegisterAsync(eventId, "Ben"));
+        var eventId = await _repository.CreateEventAsync(CreateEvent("Finals", 12));
+        var attempts = await Task.WhenAll(Enumerable.Range(1, 40)
+            .Select(number => _repository.RegisterAsync(eventId, $"Player {number}")));
 
-        Assert.Single(attempts, x => x.Status == RegistrationStatus.Confirmed);
-        Assert.Single(attempts, x => x.Status == RegistrationStatus.Full);
-        Assert.Equal(1, (await _repository.GetEventAsync(eventId))!.RegistrationCount);
+        Assert.Equal(12, attempts.Count(x => x.Status == RegistrationStatus.Confirmed));
+        Assert.Equal(28, attempts.Count(x => x.Status == RegistrationStatus.Full));
+        Assert.Equal(12, (await _repository.GetEventAsync(eventId))!.RegistrationCount);
     }
 
     [Fact]
