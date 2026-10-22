@@ -112,16 +112,37 @@ public sealed class EventRepository(IConfiguration configuration)
         }
 
         var capacity = Convert.ToInt32(capacityValue);
-        var seatCommand = connection.CreateCommand();
-        seatCommand.Transaction = transaction;
-        seatCommand.CommandText = "SELECT COALESCE(MAX(seat_number), 0) + 1 FROM registrations WHERE event_id = $id";
-        seatCommand.Parameters.AddWithValue("$id", eventId);
-        var seat = Convert.ToInt32(await seatCommand.ExecuteScalarAsync());
-        if (seat > capacity)
+        var occupancyCommand = connection.CreateCommand();
+        occupancyCommand.Transaction = transaction;
+        occupancyCommand.CommandText = "SELECT COUNT(*) FROM registrations WHERE event_id = $id";
+        occupancyCommand.Parameters.AddWithValue("$id", eventId);
+        var occupancy = Convert.ToInt32(await occupancyCommand.ExecuteScalarAsync());
+        if (occupancy >= capacity)
         {
             await transaction.RollbackAsync();
             return new(RegistrationStatus.Full);
         }
+
+        var seatCommand = connection.CreateCommand();
+        seatCommand.Transaction = transaction;
+        seatCommand.CommandText = """
+            WITH RECURSIVE seats(number) AS (
+                SELECT 1
+                UNION ALL
+                SELECT number + 1 FROM seats WHERE number < $capacity
+            )
+            SELECT number FROM seats
+            WHERE NOT EXISTS (
+                SELECT 1 FROM registrations
+                WHERE event_id = $id AND seat_number = seats.number
+            )
+            ORDER BY number
+            LIMIT 1;
+            """;
+        seatCommand.Parameters.AddWithValue("$id", eventId);
+        seatCommand.Parameters.AddWithValue("$capacity", capacity);
+        var seat = Convert.ToInt32(await seatCommand.ExecuteScalarAsync()
+            ?? throw new InvalidOperationException("No seat was available below capacity."));
 
         try
         {

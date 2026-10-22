@@ -24,9 +24,9 @@ Seeding is idempotent: it only adds demo data when the event database is empty. 
 
 ### Capacity and concurrent registrations
 
-Capacity is stored on the event. It is checked against the selected game template, and the database limits it to `1..30`. Each registration gets a numbered seat. A unique constraint on `(event_id, seat_number)` prevents two registrations from receiving the same seat.
+Capacity is stored on the event. It is checked against the selected game template, and the database limits it to `1..30`.
 
-Registration starts a SQLite `IMMEDIATE` transaction, taking the write reservation before it reads the current registrations. The server reads the event capacity, calculates the next seat, rejects the request if that seat is over capacity, and inserts the registration in the same transaction. Concurrent requests for the last seat are serialized. The first request commits the seat, and the second sees that the event is full. A test submits two registrations to a one-seat event and verifies that only one succeeds.
+Registration starts a SQLite `IMMEDIATE` transaction, taking the write reservation before it reads the current registrations. Within that transaction, the server compares the registration count with capacity. If space remains, it assigns the first open seat number and inserts the registration. Concurrent requests for the last seat are serialized. The first request commits the seat, and the second sees that the event is full. A unique constraint on `(event_id, seat_number)` is a backstop against duplicate seat assignments. Tests cover both concurrent registration and reuse of a seat after a registration is removed.
 
 Player names are unique per event using a case-insensitive database constraint. Duplicate names are rejected within an event. Supporting different players with the same name would require real player identities.
 

@@ -58,6 +58,31 @@ public sealed class RegistrationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task DeletedRegistration_FreesItsSeat()
+    {
+        var eventId = await _repository.CreateEventAsync(CreateEvent("League", 3));
+        await _repository.RegisterAsync(eventId, "Ava");
+        await _repository.RegisterAsync(eventId, "Ben");
+        await _repository.RegisterAsync(eventId, "Cora");
+
+        await using (var connection = new SqliteConnection($"Data Source={_path}"))
+        {
+            await connection.OpenAsync();
+            var delete = connection.CreateCommand();
+            delete.CommandText = "DELETE FROM registrations WHERE event_id = $event AND player_name = $name";
+            delete.Parameters.AddWithValue("$event", eventId);
+            delete.Parameters.AddWithValue("$name", "Ben");
+            await delete.ExecuteNonQueryAsync();
+        }
+
+        var result = await _repository.RegisterAsync(eventId, "Drew");
+
+        Assert.Equal(RegistrationStatus.Confirmed, result.Status);
+        Assert.Equal(2, result.SeatNumber);
+        Assert.Equal(3, (await _repository.GetEventAsync(eventId))!.RegistrationCount);
+    }
+
+    [Fact]
     public async Task DemoSeed_IsRepresentativeAndIdempotent()
     {
         var seeder = new DemoDataSeeder(_repository, new GameTemplateCatalog());
