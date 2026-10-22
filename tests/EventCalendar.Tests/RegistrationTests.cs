@@ -11,6 +11,8 @@ public sealed class RegistrationTests : IAsyncLifetime
 {
     private readonly string _path = Path.Combine(Path.GetTempPath(), $"calendar-{Guid.NewGuid()}.db");
     private EventRepository _repository = null!;
+    private static readonly GameTemplate TestTemplate = new(
+        "test", "Test Game", ["Standard"], 120, 12, 30, 1);
 
     public async Task InitializeAsync()
     {
@@ -30,7 +32,7 @@ public sealed class RegistrationTests : IAsyncLifetime
     [Fact]
     public async Task LastSeat_IsAwardedOnlyOnceUnderConcurrency()
     {
-        var eventId = await _repository.CreateEventAsync(new(0, "Finals", "magic", "Standard", DateTime.Now, 120, 1, 1, "Store"));
+        var eventId = await _repository.CreateEventAsync(CreateEvent("Finals", 1));
         var attempts = await Task.WhenAll(_repository.RegisterAsync(eventId, "Ava"), _repository.RegisterAsync(eventId, "Ben"));
 
         Assert.Single(attempts, x => x.Status == RegistrationStatus.Confirmed);
@@ -41,7 +43,7 @@ public sealed class RegistrationTests : IAsyncLifetime
     [Fact]
     public async Task DuplicateName_IsRejectedCaseInsensitively()
     {
-        var eventId = await _repository.CreateEventAsync(new(0, "League", "pokemon", "Standard", DateTime.Now, 120, 4, 2, "Store"));
+        var eventId = await _repository.CreateEventAsync(CreateEvent("League", 4));
         Assert.Equal(RegistrationStatus.Confirmed, (await _repository.RegisterAsync(eventId, "Mina")).Status);
         Assert.Equal(RegistrationStatus.Duplicate, (await _repository.RegisterAsync(eventId, "mina")).Status);
     }
@@ -49,7 +51,7 @@ public sealed class RegistrationTests : IAsyncLifetime
     [Fact]
     public async Task BlankName_IsRejectedWithoutTakingASeat()
     {
-        var eventId = await _repository.CreateEventAsync(new(0, "League", "pokemon", "Standard", DateTime.Now, 120, 4, 2, "Store"));
+        var eventId = await _repository.CreateEventAsync(CreateEvent("League", 4));
 
         Assert.Equal(RegistrationStatus.InvalidName, (await _repository.RegisterAsync(eventId, "   ")).Status);
         Assert.Equal(0, (await _repository.GetEventAsync(eventId))!.RegistrationCount);
@@ -70,4 +72,7 @@ public sealed class RegistrationTests : IAsyncLifetime
         Assert.Equal(2, draft.SeatsRemaining);
         Assert.Equal(3, events.Select(x => x.GameTemplateId).Distinct().Count());
     }
+
+    private static GameEvent CreateEvent(string name, int capacity) =>
+        TestTemplate.CreateEvent(name, "Standard", DateTime.Now, capacity, "Store").Event!;
 }

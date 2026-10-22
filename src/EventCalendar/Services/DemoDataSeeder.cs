@@ -32,7 +32,10 @@ public sealed class DemoDataSeeder(EventRepository repository, GameTemplateCatal
         string format,
         DateTime start,
         int capacity,
-        string location) =>
-        new(0, name, template.Id, format, start, template.DefaultDurationMinutes,
-            capacity, template.MinimumPlayers, location);
+        string location)
+    {
+        var result = template.CreateEvent(name, format, start, capacity, location);
+        return result.Event ?? throw new InvalidOperationException(
+            $"Invalid demo event '{name}': {string.Join("; ", result.Errors.Values)}");
+    }
 }

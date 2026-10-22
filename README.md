@@ -32,7 +32,7 @@ Player names are unique per event using a case-insensitive database constraint. 
 
 ### Game templates
 
-`GameTemplateCatalog` contains templates keyed by stable IDs. Each template provides a display name, formats, default duration, default capacity, maximum capacity, and minimum player count. The creation page uses these values for its options and defaults. The server validates the submitted format and capacity against the same template. Events store a copy of the selected values so that changing a template does not alter existing events.
+`GameTemplateCatalog` contains templates keyed by stable IDs. Each template provides a display name, formats, default duration, default capacity, maximum capacity, and minimum player count. The creation page uses these values for its options and defaults. `GameTemplate.CreateEvent` validates the format and capacity and supplies the template-owned duration and minimum player count. The creation page and demo seeder both use this path. Events store a copy of the selected values so that changing a template does not alter existing events.
 
 Adding a fourth game requires one new `GameTemplate` entry. The event creation and display code does not branch on game names. A non-card game could use the same structure if formats, duration, and player limits are enough to describe it. If a game needed teams or table assignments, I would add those as template capabilities instead of checking for a specific game name.
 

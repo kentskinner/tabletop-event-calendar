@@ -26,18 +26,19 @@ public sealed class CreateModel(GameTemplateCatalog catalog, EventRepository rep
     public async Task<IActionResult> OnPostAsync()
     {
         var template = catalog.Find(Input.GameTemplateId);
+        EventCreationResult? creation = null;
         if (template is null)
             ModelState.AddModelError("Input.GameTemplateId", "Choose a valid game.");
         else
         {
-            if (!template.Formats.Contains(Input.Format)) ModelState.AddModelError("Input.Format", "Choose a format offered by this game.");
-            if (Input.Capacity > template.MaxCapacity) ModelState.AddModelError("Input.Capacity", $"{template.Name} events support at most {template.MaxCapacity} players.");
-            if (Input.Capacity < template.MinimumPlayers) ModelState.AddModelError("Input.Capacity", $"Capacity must allow at least {template.MinimumPlayers} players.");
+            creation = template.CreateEvent(Input.Name.Trim(), Input.Format, Input.StartLocal,
+                Input.Capacity, Input.Location.Trim());
+            foreach (var error in creation.Errors)
+                ModelState.AddModelError($"Input.{error.Key}", error.Value);
         }
 
-        if (!ModelState.IsValid || template is null) return Page();
-        var id = await repository.CreateEventAsync(new(0, Input.Name.Trim(), template.Id, Input.Format,
-            Input.StartLocal, template.DefaultDurationMinutes, Input.Capacity, template.MinimumPlayers, Input.Location.Trim()));
+        if (!ModelState.IsValid || creation?.Event is null) return Page();
+        var id = await repository.CreateEventAsync(creation.Event);
         return RedirectToPage("Details", new { id });
     }
 }
