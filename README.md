@@ -42,7 +42,7 @@ Adding a fourth game requires one new `GameTemplate` entry. The event creation a
 
 ### Scope choices and next steps
 
-I spent the timebox on the main workflow: create an event, find it on the calendar, download an ICS invite, open the QR registration link, and register until the event is full. SQLite keeps local setup to one command. I used Ical.Net and QRCoder instead of implementing either format myself.
+I spent the timebox on the main workflow: create an event, find it on the calendar, download an ICS invite, open the QR registration link, and register until the event is full. I also ran a review pass during the timebox and fixed the issues it found: invalid game templates could crash the create page, template rules were enforced only in the page model, calendar invites had incomplete time zone data, and QR codes used local URLs that phones could not open. SQLite keeps local setup to one command. I used Ical.Net and QRCoder instead of implementing either format myself.
 
 I chose Razor Pages so the three-hour exercise could stay focused on the server behavior and end-to-end flow. A separate React application and API would add another toolchain and client-state layer without helping the core requirements. I would consider that split if the UI became more interactive or needed to be deployed independently.
 
@@ -50,4 +50,4 @@ I left out authentication, editing and cancellation, recurring events, payments,
 
 ## AI usage
 
-I used OpenAI Codex for the initial scaffolding, CSS, tests, and code review. The generated code called `connection.BeginTransaction(SqliteTransactionMode.Immediate)`, using an enum from a different SQLite library. The compiler rejected it, and I changed the call to `BeginTransaction(deferred: false)`, which makes last-seat registrations serialize. During browser testing I also fixed incorrect Razor routes and a form bug that reset the selected format after validation.
+I used OpenAI Codex for the initial scaffolding, CSS, tests, and implementation, and Claude for a review pass. Codex implemented the fixes that review identified. The generated code called `connection.BeginTransaction(SqliteTransactionMode.Immediate)`, using an enum from a different SQLite library. The compiler rejected it, and I changed the call to `BeginTransaction(deferred: false)`, which makes last-seat registrations serialize. During browser testing I also fixed incorrect Razor routes and a form bug that reset the selected format after validation.
