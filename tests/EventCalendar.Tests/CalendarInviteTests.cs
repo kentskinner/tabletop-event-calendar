@@ -1,4 +1,5 @@
 using EventCalendar.Data;
+using EventCalendar.Models;
 using EventCalendar.Services;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
@@ -60,5 +61,22 @@ public sealed class CalendarInviteTests : IAsyncLifetime
 
         Assert.Contains($"https://calendar.example/events/{eventId}/register", html);
         Assert.Contains("<svg", html);
+    }
+
+    [Fact]
+    public async Task EventPage_FallsBackToStoredTemplateIdWhenTemplateIsRetired()
+    {
+        using var client = _factory.CreateClient();
+        var repository = _factory.Services.GetRequiredService<EventRepository>();
+        var retiredTemplate = new GameTemplate("retired-game", "Retired Game", ["Legacy"], 90, 8, 12, 2);
+        var gameEvent = retiredTemplate.CreateEvent("Old Event", "Legacy", DateTime.Now.AddDays(1), 8, "Store").Event!;
+        var eventId = await repository.CreateEventAsync(gameEvent);
+
+        var response = await client.GetAsync($"/events/{eventId}");
+        var html = await response.Content.ReadAsStringAsync();
+
+        response.EnsureSuccessStatusCode();
+        Assert.Contains("retired-game", html);
+        Assert.Contains("Legacy", html);
     }
 }

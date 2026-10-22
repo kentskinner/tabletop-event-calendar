@@ -3,7 +3,7 @@
 @{
     ViewData["Title"] = Model.Event.Name;
 }
-<section class="page-heading"><p class="eyebrow">@Model.Template.Name · @Model.Event.Format</p><h1>@Model.Event.Name</h1><p>@Model.Event.StartLocal.ToString("dddd, MMMM d · h:mm tt")–@Model.Event.EndLocal.ToString("h:mm tt")</p></section>
+<section class="page-heading"><p class="eyebrow">@Model.GameName · @Model.Event.Format</p><h1>@Model.Event.Name</h1><p>@Model.Event.StartLocal.ToString("dddd, MMMM d · h:mm tt")–@Model.Event.EndLocal.ToString("h:mm tt")</p></section>
 <div class="detail-grid">
     <section class="panel facts">
         <div><small>Location</small><strong>@Model.Event.Location</strong></div>

@@ -16,7 +16,7 @@ public sealed class DetailsModel(
     IConfiguration configuration) : PageModel
 {
     public GameEvent Event { get; private set; } = null!;
-    public GameTemplate Template { get; private set; } = null!;
+    public string GameName { get; private set; } = "";
     public string RegistrationUrl { get; private set; } = "";
     public string QrSvg { get; private set; } = "";
 
@@ -25,7 +25,7 @@ public sealed class DetailsModel(
         var gameEvent = await repository.GetEventAsync(id);
         if (gameEvent is null) return NotFound();
         Event = gameEvent;
-        Template = catalog.Find(gameEvent.GameTemplateId)!;
+        GameName = catalog.Find(gameEvent.GameTemplateId)?.Name ?? gameEvent.GameTemplateId;
         RegistrationUrl = GetRegistrationUrl(id);
         using var qrData = QRCodeGenerator.GenerateQrCode(RegistrationUrl, QRCodeGenerator.ECCLevel.Q);
         QrSvg = new SvgQRCode(qrData).GetGraphic(5);
