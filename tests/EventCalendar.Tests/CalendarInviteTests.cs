@@ -45,6 +45,8 @@ public sealed class CalendarInviteTests : IAsyncLifetime
 
         Assert.Contains("DTSTART;TZID=America/Los_Angeles:20261023T180000", calendar);
         Assert.Contains("DTEND;TZID=America/Los_Angeles:20261023T210000", calendar);
+        Assert.Contains("BEGIN:VTIMEZONE", calendar);
+        Assert.Contains("TZID:America/Los_Angeles", calendar);
         Assert.Contains($"https://calendar.example/events/{eventId}/register", unfoldedCalendar);
     }
 

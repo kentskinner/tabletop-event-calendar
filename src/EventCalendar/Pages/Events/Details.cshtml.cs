@@ -38,6 +38,7 @@ public sealed class DetailsModel(
         if (gameEvent is null) return NotFound();
         var timeZone = configuration["EventCalendar:TimeZone"] ?? "America/Los_Angeles";
         var calendar = new Ical.Net.Calendar();
+        calendar.AddTimeZone(timeZone);
         calendar.Events.Add(new CalendarEvent
         {
             Summary = gameEvent.Name,
