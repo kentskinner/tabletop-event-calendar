@@ -1,6 +1,6 @@
 # Tabletop Event Calendar
 
-A deliberately small organizer app for scheduling trading-card-game events, sharing QR registration links, and enforcing the last available seat on the server.
+A small organizer app for scheduling trading card game events, sharing registration links, and tracking available seats.
 
 ## Run locally
 
@@ -10,7 +10,7 @@ Requires the .NET 8 SDK.
 dotnet run --project src/EventCalendar
 ```
 
-Open the URL printed in the terminal. The SQLite database is created automatically. To start with three representative events—including a nearly full draft—add the optional seed flag:
+Open the URL printed in the terminal. The SQLite database is created automatically. To load three sample events, including a nearly full draft, add the optional seed flag:
 
 ```bash
 dotnet run --project src/EventCalendar -- --seed
@@ -22,26 +22,26 @@ Seeding is idempotent: it only adds demo data when the event database is empty. 
 
 ### Capacity and concurrent registrations
 
-Capacity is an integer on the event, constrained both by the selected game template and by a database check (`1..30`). A registration owns a numbered seat. The database has a unique constraint on `(event_id, seat_number)`, so the same seat can never be issued twice.
+Capacity is stored on the event. It is checked against the selected game template, and the database limits it to `1..30`. Each registration gets a numbered seat. A unique constraint on `(event_id, seat_number)` prevents two registrations from receiving the same seat.
 
-Registration starts a SQLite `IMMEDIATE` transaction, which takes the database write reservation before reading the current registrations. Inside that transaction the server reads the event capacity, computes the next seat, rejects it if it exceeds capacity, and inserts the registration. Concurrent requests for the last seat are serialized: the winner commits that seat; the next request observes the new count and receives a clear `Full` result. Capacity is therefore an API/data-layer invariant, not a disabled button. A concurrency test fires two registrations at a one-seat event and verifies exactly one succeeds.
+Registration starts a SQLite `IMMEDIATE` transaction, taking the write reservation before it reads the current registrations. The server reads the event capacity, calculates the next seat, rejects the request if that seat is over capacity, and inserts the registration in the same transaction. Concurrent requests for the last seat are serialized. The first request commits the seat, and the second sees that the event is full. A test submits two registrations to a one-seat event and verifies that only one succeeds.
 
-Player names are unique per event using a case-insensitive database constraint. This is a pragmatic anonymous-registration rule, not an identity system; two real people with the same name would need organizer assistance in a production version.
+Player names are unique per event using a case-insensitive database constraint. This is only a duplicate-registration check, not an identity system. A production version would need a better way to handle two people with the same name.
 
 ### Game templates
 
-`GameTemplateCatalog` contains immutable templates keyed by stable IDs. Each template supplies display name, available formats, default duration, default capacity, maximum capacity, and minimum players. The creation page uses those values for its dynamic choices and defaults; the server independently validates the submitted format and capacity against the same template. Event records snapshot the chosen format, duration, capacity, and minimum-player rule, so later template changes do not silently rewrite scheduled events.
+`GameTemplateCatalog` contains templates keyed by stable IDs. Each template provides a display name, formats, default duration, default capacity, maximum capacity, and minimum player count. The creation page uses these values for its options and defaults. The server validates the submitted format and capacity against the same template. Events store a copy of the selected values so that changing a template does not alter existing events.
 
-Adding a fourth game means adding one `GameTemplate` entry; event creation and display require no conditional game logic. A non-card game can use the same shape if formats, duration, and player bounds describe it. If it needed genuinely different concepts—teams or tables, for example—I would add optional, typed template capabilities rather than branching on the game name.
+Adding a fourth game requires one new `GameTemplate` entry. The event creation and display code does not branch on game names. A non-card game could use the same structure if formats, duration, and player limits are enough to describe it. If a game needed teams or table assignments, I would add those as template capabilities instead of checking for a specific game name.
 
 ### Scope choices and next steps
 
-I spent the timebox on the complete path: create an event, find it in a day-grouped calendar, download a standards-based ICS invite, scan or follow a generated QR link, and register until the server says the event is full. SQLite keeps setup to one command and is sufficient for a single organizer. I used Ical.Net and QRCoder rather than hand-writing either format.
+I spent the timebox on the main workflow: create an event, find it on the calendar, download an ICS invite, open the QR registration link, and register until the event is full. SQLite keeps local setup to one command. I used Ical.Net and QRCoder instead of implementing either format myself.
 
-I chose server-rendered Razor Pages to keep the three-hour exercise focused on transactional correctness and the complete user flow. A separate React SPA and API would add another toolchain, deployment boundary, and client-state layer without improving the core requirements; I would introduce that split if richer client interactions or independent frontend deployment justified it.
+I chose Razor Pages so the three-hour exercise could stay focused on the server behavior and end-to-end flow. A separate React application and API would add another toolchain and client-state layer without helping the core requirements. I would consider that split if the UI became more interactive or needed to be deployed independently.
 
-I deliberately cut authentication, editing/cancellation, recurring events, payments, email, waitlists, and a full month-grid library, as requested. The UI treats entered times as the store's local time; production would store an explicit IANA time zone and UTC instant, add migrations and structured logging, protect organizer actions, apply CSRF/rate-limit review, and run browser-level tests for QR/ICS and the whole flow. I would also separate read/write services once the product had more than this single vertical slice.
+I left out authentication, editing and cancellation, recurring events, payments, email, waitlists, and a month-grid calendar. The UI treats entered times as the store's local time. Next I would store an explicit IANA time zone and UTC instant, add database migrations and structured logging, protect organizer actions, and add browser tests for the full workflow. I would also split the read and write services once the application grew beyond this small feature set.
 
 ## AI usage
 
-I used OpenAI Codex to accelerate scaffolding, CSS, test cases, and review. Its initial implementation called a nonexistent SQLite transaction API; compilation caught the mistake, and I replaced it with `BeginTransaction(deferred: false)`, which creates the immediate transaction needed to serialize last-seat claims. Browser testing also caught malformed Razor routes and a selected format that was lost after validation, so I corrected both rather than treating generated output as finished code.
+I used OpenAI Codex for the initial scaffolding, CSS, tests, and code review. The first version called a SQLite transaction API that does not exist. The compiler caught it, and I changed the code to `BeginTransaction(deferred: false)` so last-seat registrations are serialized. During browser testing I also fixed incorrect Razor routes and a form bug that reset the selected format after validation.
