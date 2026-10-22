@@ -1,5 +1,7 @@
 # Tabletop Event Calendar
 
+[![CI](https://github.com/kentskinner/tabletop-event-calendar/actions/workflows/ci.yml/badge.svg)](https://github.com/kentskinner/tabletop-event-calendar/actions/workflows/ci.yml)
+
 A small organizer app for scheduling trading card game events, sharing registration links, and tracking available seats.
 
 ## Run locally
