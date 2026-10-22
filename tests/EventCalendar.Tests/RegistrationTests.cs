@@ -1,5 +1,6 @@
 using EventCalendar.Data;
 using EventCalendar.Models;
+using EventCalendar.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
 using Xunit;
@@ -43,5 +44,21 @@ public sealed class RegistrationTests : IAsyncLifetime
         var eventId = await _repository.CreateEventAsync(new(0, "League", "pokemon", "Standard", DateTime.Now, 120, 4, 2, "Store"));
         Assert.Equal(RegistrationStatus.Confirmed, (await _repository.RegisterAsync(eventId, "Mina")).Status);
         Assert.Equal(RegistrationStatus.Duplicate, (await _repository.RegisterAsync(eventId, "mina")).Status);
+    }
+
+    [Fact]
+    public async Task DemoSeed_IsRepresentativeAndIdempotent()
+    {
+        var seeder = new DemoDataSeeder(_repository, new GameTemplateCatalog());
+
+        await seeder.SeedAsync();
+        await seeder.SeedAsync();
+
+        var events = await _repository.ListEventsAsync();
+        Assert.Equal(3, events.Count);
+        var draft = Assert.Single(events, x => x.Name == "Friday Night Draft");
+        Assert.Equal(6, draft.RegistrationCount);
+        Assert.Equal(2, draft.SeatsRemaining);
+        Assert.Equal(3, events.Select(x => x.GameTemplateId).Distinct().Count());
     }
 }

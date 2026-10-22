@@ -10,7 +10,13 @@ Requires the .NET 8 SDK.
 dotnet run --project src/EventCalendar
 ```
 
-Open the URL printed in the terminal. The SQLite database is created automatically. Run the tests with `dotnet test`.
+Open the URL printed in the terminal. The SQLite database is created automatically. To start with three representative events—including a nearly full draft—add the optional seed flag:
+
+```bash
+dotnet run --project src/EventCalendar -- --seed
+```
+
+Seeding is idempotent: it only adds demo data when the event database is empty. Run the tests with `dotnet test`.
 
 ## Design
 
